@@ -1,7 +1,7 @@
 # YT-Downloader
 A small GUI based YouTube Playlist downloader. Each video in the playlist will be downloaded to an external folder. Options for audio, video, or both.
 
-![Screenshot_20230124_121342](https://user-images.githubusercontent.com/23511285/214361905-84bdb3e2-939f-4c0c-b2cb-90d932424344.png)
+![Screenshot_20230124_161855](https://user-images.githubusercontent.com/23511285/214427759-e2bdaef2-9166-4a1f-ad6e-f9faf57027db.png)
 
 # How to Use (must have Python installed)
 1. Download and install the latest version of Python from the official website (https://www.python.org/downloads/).
