@@ -73,7 +73,21 @@ def save_videos(saved_path, our_links, download_type, convert):
 
     dpg.add_text(f'Files will be saved to: {saved_path}', parent="downloading")
 
-    dpg.add_text('Connecting to YouTube API...', parent="downloading")
+    dpg.add_text('Connecting to YouTube API...', parent="downloading", color=(242, 21, 72, 255))
+
+    if convert:
+        dpg.add_text('Converting MP4 to MP3.', parent="downloading")
+
+    x=[]
+    for root, dirs, files in os.walk(".", topdown=False):
+        for name in files:
+            pathh = os.path.join(root, name)
+
+            
+            if os.path.getsize(pathh) < 1:
+                os.remove(pathh)
+            else:
+                x.append(str(name))
 
 
     for link in our_links:
@@ -88,9 +102,10 @@ def save_videos(saved_path, our_links, download_type, convert):
             break
 
         
-        try:
+        # Check if we have already downloaded this file before
+        if main_title not in x:
 
-            dpg.add_text(f"Beginning: " + main_title, parent="downloading")
+            dpg.add_text(f"Beginning: " + main_title, parent="downloading", color=(163, 186, 30, 255))
 
             
             if download_type == "Audio Only":
@@ -105,15 +120,14 @@ def save_videos(saved_path, our_links, download_type, convert):
                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
 
 
-            dpg.add_text(f"Finished: " + main_title, parent="downloading")
+            dpg.add_text(f"Finished: " + main_title, parent="downloading", color=(30, 186, 43, 255))
 
 
-        except Exception as e:
-            print(e)
-            dpg.add_text(f'Skipping "{main_title}" error occurred.', parent="downloading")
+        else:
+            dpg.add_text(f'Skipping "{main_title}" already downloaded.', parent="downloading")
 
     
-    dpg.add_text('Finished.', parent="downloading")
+    dpg.add_text('Finished.', parent="downloading", color=(21, 39, 242, 0.8))
     dpg.add_text(f'They can be found at: {saved_path}', parent="downloading")
 
 
@@ -128,10 +142,11 @@ def monitors():
 def download(sender, app_data, user_data):
     URL = dpg.get_value(user_data[0])
     DOWNLOAD_TYPE = dpg.get_value(user_data[1])
+    CONVERT = dpg.get_value(user_data[2])
 
     if str(URL).startswith("https://www.youtube.com"):
         links = link_snatcher(URL)
-        save_videos("Downloads", links, DOWNLOAD_TYPE, user_data[2])
+        save_videos("Downloads", links, DOWNLOAD_TYPE, CONVERT)
     else:
         dpg.add_text("Link must begin with 'https://www.youtube.com'.", parent="downloading")
 
@@ -163,8 +178,6 @@ def start_program():
         with dpg.child_window(pos=(0, 25)):
 
             dpg.add_text("Download Type: " + dpg.get_value(download_type), tag="download-type-label")
-            dpg.add_text("Convert to MP3?: " + "True" if dpg.get_value(conversion_type) else "False", tag="convert-type-label")
-
 
             URL = dpg.add_input_text(label="YouTube Playlist URL", width=425)
 
