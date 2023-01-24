@@ -1,4 +1,4 @@
-# YouTube-Playlist-Downloader
+# YT-Downloader
 A small GUI based YouTube Playlist downloader. Each video in the playlist will be downloaded to an external folder. Options for audio, video, or both.
 
 ![Screenshot_20230124_121342](https://user-images.githubusercontent.com/23511285/214361905-84bdb3e2-939f-4c0c-b2cb-90d932424344.png)
