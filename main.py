@@ -89,6 +89,10 @@ def save_videos(saved_path, our_links, download_type, convert):
 
         
         try:
+
+            dpg.add_text(f"Beginning: " + main_title, parent="downloading")
+
+            
             if download_type == "Audio Only":
                 vid = yt.streams.get_audio_only()
                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
