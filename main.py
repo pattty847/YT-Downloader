@@ -56,11 +56,8 @@ def on_progress(stream, chunk, bytes_remaining):
     total_size = stream.filesize
     bytes_downloaded = total_size - bytes_remaining
     pct_completed = bytes_downloaded / total_size * 100
+    dpg.add_text(f"Total size: {total_size}")
     dpg.add_text(f"Status: {round(pct_completed, 2)} %", parent="downloading")
-
-
-def on_complete():
-    pass
 
 
 def save_videos(saved_path, our_links, download_type, convert):
