@@ -1,12 +1,9 @@
 import dearpygui.dearpygui as dpg
 import dearpygui.demo as demo
-import os
-from pytube import YouTube
-from pytube import Playlist
-import requests
-import re
 import testing as t
 
+from pytube import YouTube
+from pytube import Playlist
 from screeninfo import get_monitors
 
 def on_progress(stream, chunk, bytes_remaining):
@@ -19,7 +16,7 @@ def on_progress(stream, chunk, bytes_remaining):
 
 def download(sender, app_data, user_data):
 
-    URL, dl_type, convert_to_mp3, download_path = dpg.get_value(user_data[0]), dpg.get_value(user_data[1]), dpg.get_value(user_data[2]), "Downloads"
+    URL, download_type, convert_to_mp3, download_path = dpg.get_value(user_data[0]), dpg.get_value(user_data[1]), dpg.get_value(user_data[2]), "Downloads"
 
     playlist = Playlist(URL)
 
@@ -29,12 +26,12 @@ def download(sender, app_data, user_data):
         title = youtube.title
         thumbnail = youtube.thumbnail_url
 
-        if dl_type == "Audio Only":
+        if download_type == "Audio Only":
             audio = youtube.streams.get_audio_only()
 
             print(f"Downloading: {title} | APR: {audio.abr}")
             audio.download(download_path, title + ".mp3" if convert_to_mp3 else "")
-        elif dl_type == "Video/Audio":
+        elif download_type == "Video/Audio":
             video = youtube.streams.get_highest_resolution()
 
             print(f"Downloading: {title} | FPS: {video.fps} | RES: {video.resolution}")
@@ -42,74 +39,6 @@ def download(sender, app_data, user_data):
 
         # Push download to console
         
-
-
-# def save_videos(saved_path, our_links, download_type, convert):
-
-#     # Create the folder the downloads will go in
-#     try:
-#         os.mkdir(saved_path)
-#     except:
-#         print('Folder exists.')
-
-#     dpg.add_text(f'Files will be saved to: {saved_path}', parent="downloading")
-
-#     dpg.add_text('Connecting to YouTube API...', parent="downloading", color=(242, 21, 72, 255))
-
-#     if convert:
-#         dpg.add_text('Converting MP4 to MP3.', parent="downloading")
-
-#     x=[]
-#     for root, dirs, files in os.walk(".", topdown=False):
-#         for name in files:
-#             pathh = os.path.join(root, name)
-
-            
-#             if os.path.getsize(pathh) < 1:
-#                 os.remove(pathh)
-#             else:
-#                 x.append(str(name))
-
-
-#     for link in our_links:
-#         try:
-#             yt = YouTube(link, on_progress_callback=on_progress)
-#             main_title = yt.title
-#             main_title = main_title.replace('|', '')
-
-            
-#         except:
-#             dpg.add_text('Connection issue.', parent="downloading")
-#             break
-
-        
-#         # Check if we have already downloaded this file before
-#         if main_title not in x:
-
-#             dpg.add_text(f"Beginning: " + main_title, parent="downloading", color=(163, 186, 30, 255))
-
-            
-#             if download_type == "Audio Only":
-#                 vid = yt.streams.get_audio_only()
-#                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
-
-#             elif download_type == "Video Only":
-#                 vid = yt.streams.filter(only_video=True)
-#                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
-#             elif download_type == "Both":
-#                 vid = yt.streams.filter(progressive=True)
-#                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
-
-
-#             dpg.add_text(f"Finished: " + main_title, parent="downloading", color=(30, 186, 43, 255))
-
-
-#         else:
-#             dpg.add_text(f'Skipping "{main_title}" already downloaded.', parent="downloading")
-
-    
-#     dpg.add_text('Finished.', parent="downloading", color=(21, 39, 242, 0.8))
-#     dpg.add_text(f'They can be found at: {saved_path}', parent="downloading")
 
 
 def monitors():
@@ -137,7 +66,7 @@ def start_program():
             with dpg.menu(label="Settings"):
                 download_type = dpg.add_radio_button(("Audio Only", "Video/Audio"), default_value="Audio Only" , horizontal=True, callback=download_type_label)
                 
-                conversion_type = dpg.add_checkbox(label="Convert to MP3?", default_value=True)
+                convert_to_mp3 = dpg.add_checkbox(label="Convert to MP3?", default_value=True)
 
             dpg.add_menu_item(label="Demo", callback=lambda: demo.show_demo())
 
@@ -147,7 +76,7 @@ def start_program():
 
             URL = dpg.add_input_text(label="YouTube Playlist URL", width=425)
 
-            dpg.add_button(label="Download", callback = download, user_data=(URL, download_type, conversion_type))
+            dpg.add_button(label="Download", callback = download, user_data=(URL, download_type, convert_to_mp3))
 
             with dpg.child_window(tag="downloading"):
                 pass
