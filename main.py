@@ -11,7 +11,39 @@ def on_progress(stream, chunk, bytes_remaining):
     total_size = stream.filesize
     bytes_downloaded = total_size - bytes_remaining
     pct_completed = bytes_downloaded / total_size * 100
-    print(f"Status: {round(pct_completed, 2)} %")
+    dpg.add_text(f"Status: {round(pct_completed, 2)} %", parent="console")
+
+
+def on_complete(tag):
+    dpg.delete_item(f"{tag}_loading")
+
+
+def downloading_placeholder(
+        tag: str, identifier: str, message: str
+    ) -> None:
+        """Creates the default placeholder item for a work.
+        """
+
+        with dpg.child_window(
+            tag=f"{tag}_window", parent="console", autosize_x=True, height=70
+        ):
+            with dpg.group(tag=f"{tag}_group", horizontal=True):
+                dpg.add_loading_indicator(tag=f"{tag}_loading", show=True)
+                dpg.add_spacer()
+                with dpg.group(tag=f"{tag}_content_group", horizontal=True):
+                    with dpg.child_window(
+                        tag=f"{tag}_layout_left",
+                        border=False,
+                        autosize_x=True,
+                        autosize_y=True,
+                    ):
+                        with dpg.group(tag=f"{tag}_heading_group", horizontal=True):
+                            dpg.add_text(identifier, tag=f"{tag}_id")
+                            with dpg.group(
+                                tag=f"{tag}_title_group", horizontal=True,
+                            ):
+                                dpg.add_spacer(width=30)
+                                dpg.add_text(message, tag=f"{tag}_status_text")
 
 
 def download(sender, app_data, user_data):
@@ -21,7 +53,7 @@ def download(sender, app_data, user_data):
     playlist = Playlist(URL)
 
     for video in playlist.video_urls:
-        youtube = YouTube(video, on_progress_callback=on_progress)
+        youtube = YouTube(video)
 
         title = youtube.title
         thumbnail = youtube.thumbnail_url
@@ -29,16 +61,19 @@ def download(sender, app_data, user_data):
         if download_type == "Audio Only":
             audio = youtube.streams.get_audio_only()
 
-            print(f"Downloading: {title} | APR: {audio.abr}")
+            downloading_placeholder(youtube.video_id, audio.title, audio.abr)
+            youtube.register_on_complete_callback(on_complete(youtube.video_id))
+
+            # dpg.add_text(f"Downloading: {title} | APR: {audio.abr}", parent="console")
             audio.download(download_path, title + ".mp3" if convert_to_mp3 else "")
         elif download_type == "Video/Audio":
             video = youtube.streams.get_highest_resolution()
 
-            print(f"Downloading: {title} | FPS: {video.fps} | RES: {video.resolution}")
-            video.download(download_path, title)
+            downloading_placeholder(youtube.video_id, video.title, video.fps)
+            youtube.register_on_complete_callback(on_complete(youtube.video_id))
 
-        # Push download to console
-        
+            # dpg.add_text(f"Downloading: {title} | FPS: {video.fps} | RES: {video.resolution}", parent="console")
+            video.download(download_path, title)
 
 
 def monitors():
@@ -52,10 +87,6 @@ def download_type_label(sender, app_data, user_data):
     dpg.set_value("download-type-label", "Download Type: " + app_data)
 
 
-def convert_type_label(sender, app_data, user_data):
-    dpg.set_value("convert-type-label", app_data)
-
-
 def start_program():
     
     dpg.create_context()
@@ -67,8 +98,11 @@ def start_program():
                 download_type = dpg.add_radio_button(("Audio Only", "Video/Audio"), default_value="Audio Only" , horizontal=True, callback=download_type_label)
                 
                 convert_to_mp3 = dpg.add_checkbox(label="Convert to MP3?", default_value=True)
+                with dpg.tooltip(dpg.last_item()):
+                    dpg.add_text("This will convert an audio MP4 file into MP3.")
 
-            dpg.add_menu_item(label="Demo", callback=lambda: demo.show_demo())
+
+            dpg.add_menu_item(label="Demo", callback=lambda:demo.show_demo())
 
         with dpg.child_window(pos=(0, 25)):
 
@@ -78,7 +112,7 @@ def start_program():
 
             dpg.add_button(label="Download", callback = download, user_data=(URL, download_type, convert_to_mp3))
 
-            with dpg.child_window(tag="downloading"):
+            with dpg.child_window(tag="console"):
                 pass
 
     # Primary Window: x and y pos
