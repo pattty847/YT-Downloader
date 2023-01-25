@@ -9,8 +9,8 @@ A small GUI based YouTube Playlist downloader. Each video in the playlist will b
 3. In the project directory, open a command prompt or terminal window.
 4. Use the command `python -m venv venv` to create a virtual environment.
 5. To activate the virtual environment type:
-   Mac/Linux: `source venv/bin/activate`
-   Windows: `.\venv\Scripts\Activate.bat`
+Mac/Linux: `source venv/bin/activate`
+Windows: `.\venv\Scripts\Activate.bat`
 7. `pip install -r requirements.txt` to create a virtual environment for the project and insatll the dependencies.
 8. Run the script by using the command `python main.py`
 9. If you run into any issues, please check that all dependencies are installed correctly, and that you are running the script using the correct version of Python.
