@@ -2,130 +2,114 @@ import dearpygui.dearpygui as dpg
 import dearpygui.demo as demo
 import os
 from pytube import YouTube
+from pytube import Playlist
 import requests
 import re
+import testing as t
 
 from screeninfo import get_monitors
-
-
-def link_snatcher(url):
-
-    # Attempt to make a HTTP GET request to the URL
-    our_links = []
-    try:
-        res = requests.get(url)
-    except:
-        print('no internet')
-        return False
-
-    # Grab the plain text if we get a response
-    plain_text = res.text
-
-    # We will now check to see if the URL contains 'list=', which tells us it's a playlist URL from YouTube.
-    if 'list=' in url:
-
-        # We will grab the playlist ID by indexing everything after the '='
-        # rfind - finds the index of the last occurance of the passed variable
-        playlist_index = url.rfind('=') + 1
-
-        # Full playlist URL will be created by indexing from 'eq' to the end of the string
-        # Output: PLh325Afkh1nNUktTkPB_f_3YtMdOOITYl
-        playlist_ID = url[playlist_index:]
-    else:
-        print('Incorrect Playlist.')
-        return False
-
-    # We now search for this string + playlist ID
-    tmp_mat = re.compile(r'watch\?v=\S+?list=' + playlist_ID)
-    mat = re.findall(tmp_mat, plain_text)
-
-    # mat - contains list of URLs
-    for m in mat:
-        new_m = m.replace('&amp;', '&')
-        work_m = 'https://youtube.com/' + new_m
-        
-        # Add the full URL of the video to 'our_links'
-        if work_m not in our_links:
-            our_links.append(work_m)
-
-    return our_links
-
 
 def on_progress(stream, chunk, bytes_remaining):
     """Callback function"""
     total_size = stream.filesize
     bytes_downloaded = total_size - bytes_remaining
     pct_completed = bytes_downloaded / total_size * 100
-    dpg.add_text(f"Total size: {total_size}")
-    dpg.add_text(f"Status: {round(pct_completed, 2)} %", parent="downloading")
+    print(f"Status: {round(pct_completed, 2)} %")
 
 
-def save_videos(saved_path, our_links, download_type, convert):
+def download(sender, app_data, user_data):
 
-    # Create the folder the downloads will go in
-    try:
-        os.mkdir(saved_path)
-    except:
-        print('Folder exists.')
+    URL, dl_type, convert_to_mp3, download_path = dpg.get_value(user_data[0]), dpg.get_value(user_data[1]), dpg.get_value(user_data[2]), "Downloads"
 
-    dpg.add_text(f'Files will be saved to: {saved_path}', parent="downloading")
+    playlist = Playlist(URL)
 
-    dpg.add_text('Connecting to YouTube API...', parent="downloading", color=(242, 21, 72, 255))
+    for video in playlist.video_urls:
+        youtube = YouTube(video, on_progress_callback=on_progress)
 
-    if convert:
-        dpg.add_text('Converting MP4 to MP3.', parent="downloading")
+        title = youtube.title
+        thumbnail = youtube.thumbnail_url
 
-    x=[]
-    for root, dirs, files in os.walk(".", topdown=False):
-        for name in files:
-            pathh = os.path.join(root, name)
+        if dl_type == "Audio Only":
+            audio = youtube.streams.get_audio_only()
+
+            print(f"Downloading: {title} | APR: {audio.abr}")
+            audio.download(download_path, title + ".mp3" if convert_to_mp3 else "")
+        elif dl_type == "Video/Audio":
+            video = youtube.streams.get_highest_resolution()
+
+            print(f"Downloading: {title} | FPS: {video.fps} | RES: {video.resolution}")
+            video.download(download_path, title)
+
+        # Push download to console
+        
+
+
+# def save_videos(saved_path, our_links, download_type, convert):
+
+#     # Create the folder the downloads will go in
+#     try:
+#         os.mkdir(saved_path)
+#     except:
+#         print('Folder exists.')
+
+#     dpg.add_text(f'Files will be saved to: {saved_path}', parent="downloading")
+
+#     dpg.add_text('Connecting to YouTube API...', parent="downloading", color=(242, 21, 72, 255))
+
+#     if convert:
+#         dpg.add_text('Converting MP4 to MP3.', parent="downloading")
+
+#     x=[]
+#     for root, dirs, files in os.walk(".", topdown=False):
+#         for name in files:
+#             pathh = os.path.join(root, name)
 
             
-            if os.path.getsize(pathh) < 1:
-                os.remove(pathh)
-            else:
-                x.append(str(name))
+#             if os.path.getsize(pathh) < 1:
+#                 os.remove(pathh)
+#             else:
+#                 x.append(str(name))
 
 
-    for link in our_links:
-        try:
-            yt = YouTube(link, on_progress_callback=on_progress)
-            main_title = yt.title
-            main_title = main_title.replace('|', '')
+#     for link in our_links:
+#         try:
+#             yt = YouTube(link, on_progress_callback=on_progress)
+#             main_title = yt.title
+#             main_title = main_title.replace('|', '')
 
             
-        except:
-            dpg.add_text('Connection issue.', parent="downloading")
-            break
+#         except:
+#             dpg.add_text('Connection issue.', parent="downloading")
+#             break
 
         
-        # Check if we have already downloaded this file before
-        if main_title not in x:
+#         # Check if we have already downloaded this file before
+#         if main_title not in x:
 
-            dpg.add_text(f"Beginning: " + main_title, parent="downloading", color=(163, 186, 30, 255))
+#             dpg.add_text(f"Beginning: " + main_title, parent="downloading", color=(163, 186, 30, 255))
 
             
-            if download_type == "Audio Only":
-                vid = yt.streams.get_audio_only()
-                vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
+#             if download_type == "Audio Only":
+#                 vid = yt.streams.get_audio_only()
+#                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
 
-            elif download_type == "Video Only":
-                vid = yt.streams.filter(only_video=True)
-                vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
-            elif download_type == "Both":
-                vid = yt.streams.filter(progressive=True)
-                vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
-
-
-            dpg.add_text(f"Finished: " + main_title, parent="downloading", color=(30, 186, 43, 255))
+#             elif download_type == "Video Only":
+#                 vid = yt.streams.filter(only_video=True)
+#                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
+#             elif download_type == "Both":
+#                 vid = yt.streams.filter(progressive=True)
+#                 vid.download(saved_path, filename=main_title+'.mp3' if convert else '.mp4')
 
 
-        else:
-            dpg.add_text(f'Skipping "{main_title}" already downloaded.', parent="downloading")
+#             dpg.add_text(f"Finished: " + main_title, parent="downloading", color=(30, 186, 43, 255))
+
+
+#         else:
+#             dpg.add_text(f'Skipping "{main_title}" already downloaded.', parent="downloading")
 
     
-    dpg.add_text('Finished.', parent="downloading", color=(21, 39, 242, 0.8))
-    dpg.add_text(f'They can be found at: {saved_path}', parent="downloading")
+#     dpg.add_text('Finished.', parent="downloading", color=(21, 39, 242, 0.8))
+#     dpg.add_text(f'They can be found at: {saved_path}', parent="downloading")
 
 
 def monitors():
@@ -133,19 +117,6 @@ def monitors():
     for monitor in monitors:
         if monitor.is_primary:
             return monitor
-
-
-# This function will download the YouTube videos within the Playlist URL
-def download(sender, app_data, user_data):
-    URL = dpg.get_value(user_data[0])
-    DOWNLOAD_TYPE = dpg.get_value(user_data[1])
-    CONVERT = dpg.get_value(user_data[2])
-
-    if str(URL).startswith("https://www.youtube.com"):
-        links = link_snatcher(URL)
-        save_videos("Downloads", links, DOWNLOAD_TYPE, CONVERT)
-    else:
-        dpg.add_text("Link must begin with 'https://www.youtube.com'.", parent="downloading")
 
 
 def download_type_label(sender, app_data, user_data):
@@ -164,12 +135,10 @@ def start_program():
         with dpg.viewport_menu_bar():
 
             with dpg.menu(label="Settings"):
-
-                with dpg.menu(label="Download Type"):
-
-                    download_type = dpg.add_radio_button(("Audio Only", "Video Only", "Both"), default_value="Audio Only" , horizontal=True, callback=download_type_label)
+                download_type = dpg.add_radio_button(("Audio Only", "Video/Audio"), default_value="Audio Only" , horizontal=True, callback=download_type_label)
                 
                 conversion_type = dpg.add_checkbox(label="Convert to MP3?", default_value=True)
+
             dpg.add_menu_item(label="Demo", callback=lambda: demo.show_demo())
 
         with dpg.child_window(pos=(0, 25)):
@@ -182,7 +151,6 @@ def start_program():
 
             with dpg.child_window(tag="downloading"):
                 pass
-
 
     # Primary Window: x and y pos
     x, y, width, height = monitors().x, monitors().y, monitors().width, monitors().height
