@@ -1,80 +1,27 @@
 import dearpygui.dearpygui as dpg
 import dearpygui.demo as demo
-import testing as t
 
+from callbacks import CallbackHandler
 from pytube import YouTube
 from pytube import Playlist
 from screeninfo import get_monitors
 
+handler = CallbackHandler()
+
 
 def on_progress(stream, chunk, bytes_remaining, tag):
-    """Callback function"""
+    """ Updates download progress to download_placeholder
+
+    Args:
+        stream (YouTube Stream): YouTube Object for URL
+        chunk (): NA
+        bytes_remaining (int): Bytes remaining in download
+        tag (_type_): Tag for the text that displays the status
+    """
     total_size = stream.filesize
     bytes_downloaded = total_size - bytes_remaining
     pct_completed = bytes_downloaded / total_size * 100
     dpg.set_value(f"{tag}_status_text", f"Status: {round(pct_completed, 2)} %")
-
-
-def downloading_placeholder(
-    tag: str, identifier: str, message: str
-) -> None:
-    """Creates the default placeholder item for a work.
-        """
-
-    with dpg.child_window(
-        tag=f"{tag}_window", parent="console", autosize_x=True, height=35
-    ):
-        with dpg.group(tag=f"{tag}_group", horizontal=True):
-            dpg.add_loading_indicator(tag=f"{tag}_loading", show=True)
-            dpg.add_spacer()
-            with dpg.group(tag=f"{tag}_content_group", horizontal=True):
-                with dpg.child_window(
-                    tag=f"{tag}_layout_left",
-                    border=False,
-                    autosize_x=True,
-                    autosize_y=True,
-                ):
-                    with dpg.group(tag=f"{tag}_heading_group", horizontal=True):
-                        dpg.add_text(identifier, tag=f"{tag}_id")
-                        with dpg.group(
-                            tag=f"{tag}_title_group", horizontal=True,
-                        ):
-                            dpg.add_text(message, tag=f"{tag}_status_text")
-
-
-def download(sender, app_data, user_data):
-
-    dpg.add_text("Connecting to YouTube API", parent="console")
-
-    URL, download_type, convert_to_mp3, download_path = dpg.get_value(
-        user_data[0]), dpg.get_value(user_data[1]), dpg.get_value(user_data[2]), "Downloads"
-
-    if "playlist" in URL:
-        playlist = Playlist(URL)
-
-    for video in playlist.video_urls:
-        youtube = YouTube(video)
-
-        title = youtube.title
-        thumbnail = youtube.thumbnail_url
-
-        if download_type == "Audio Only":
-
-            downloading_placeholder(youtube.video_id, audio.title, audio.abr)
-
-            audio = youtube.streams.get_audio_only()
-
-            audio.download(download_path, title +
-                           ".mp3" if convert_to_mp3 else "")
-        elif download_type == "Video/Audio":
-
-            downloading_placeholder(youtube.video_id, audio.title, audio.abr)
-
-            video = youtube.streams.get_highest_resolution()
-
-            video.download(download_path, title)
-
-        dpg.delete_item(f"{youtube.video_id}_loading")
 
 
 def monitors():
@@ -82,10 +29,6 @@ def monitors():
     for monitor in monitors:
         if monitor.is_primary:
             return monitor
-
-
-def download_type_label(sender, app_data, user_data):
-    dpg.set_value("download-type-label", "Download Type: " + app_data)
 
 
 def start_program():
@@ -97,24 +40,22 @@ def start_program():
 
             with dpg.menu(label="Settings"):
                 download_type = dpg.add_radio_button(
-                    ("Audio Only", "Video/Audio"), default_value="Audio Only", horizontal=True, callback=download_type_label)
+                    ("Audio Only", "Video/Audio"), default_value="Audio Only", horizontal=True, callback=handler.download_type_clicked)
 
                 convert_to_mp3 = dpg.add_checkbox(
-                    label="Convert to MP3?", default_value=True)
+                    label="Convert to MP3?", tag="convert-to-audio", default_value=True, callback=handler.convert_audio_to_mp3_clicked)
+
                 with dpg.tooltip(dpg.last_item()):
                     dpg.add_text(
-                        "This will convert an audio MP4 file into MP3.")
+                        "This will convert an audio MP4 file into MP3 (audio only must be selected).")
 
             dpg.add_menu_item(label="Demo", callback=lambda: demo.show_demo())
 
         with dpg.child_window(pos=(0, 25)):
 
-            dpg.add_text("Download Type: " +
-                         dpg.get_value(download_type), tag="download-type-label")
+            URL = dpg.add_input_text(label="YouTube Playlist URL", width=425, callback=handler.url)
 
-            URL = dpg.add_input_text(label="YouTube Playlist URL", width=425)
-
-            dpg.add_button(label="Download", callback=download,
+            dpg.add_button(label="Download", callback=handler.download_clicked,
                            user_data=(URL, download_type, convert_to_mp3))
 
             with dpg.child_window(tag="console"):
